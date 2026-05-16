@@ -1,6 +1,7 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 import { submitOrder } from '../lib/checkout.js'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
@@ -261,6 +262,7 @@ function Confirmed({ orderId }) {
 ══════════════════════════════════════════════ */
 export default function Checkout() {
   const { items, subtotal, totalQty, clear } = useCart()
+  const { user, profile } = useAuth()
 
   const [form, setForm]           = useState(INITIAL)
   const [file, setFile]           = useState(null)
@@ -271,6 +273,19 @@ export default function Checkout() {
   const [orderId, setOrderId]     = useState(null)
 
   const fileRef = useRef(null)
+
+  // Autocompletar con datos del usuario logueado
+  useEffect(() => {
+    if (user || profile) {
+      setForm((prev) => ({
+        ...prev,
+        nombre:   profile?.nombre   || prev.nombre,
+        apellido: profile?.apellido || prev.apellido,
+        email:    user?.email       || prev.email,
+        telefono: profile?.telefono || prev.telefono,
+      }))
+    }
+  }, [user, profile])
 
   /* ── Handlers ── */
   const handleChange = (e) => {
@@ -317,7 +332,7 @@ export default function Checkout() {
     setServerError(null)
 
     try {
-      const { orderId: newId } = await submitOrder({ form, items, subtotal, file })
+      const { orderId: newId } = await submitOrder({ form, items, subtotal, file, userId: user?.id || null })
 
       // Todo OK: vaciamos el carrito y mostramos confirmación
       clear()

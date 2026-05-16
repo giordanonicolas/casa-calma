@@ -3,13 +3,20 @@ import { supabase } from './supabase.js'
 /**
  * Sube el comprobante a Storage y guarda el pedido + items en la base de datos.
  *
- * @param {{ form: object, items: Array, subtotal: number, file: File }} param
+ * Genera el orderId en el cliente con crypto.randomUUID() para evitar necesitar
+ * una policy SELECT en RLS — el INSERT no devuelve filas, evitando el error
+ * "new row violates row-level security policy".
+ *
+ * @param {{ form: object, items: Array, subtotal: number, file: File, userId?: string|null }} param
  * @returns {{ orderId: string }}
  * @throws Error con mensaje legible si algo falla
  */
-export async function submitOrder({ form, items, subtotal, file }) {
+export async function submitOrder({ form, items, subtotal, file, userId = null }) {
 
-  /* ── 1. Subir comprobante a Storage ── */
+  /* ── 1. Generar ID del pedido en el cliente ── */
+  const orderId = crypto.randomUUID()
+
+  /* ── 2. Subir comprobante a Storage ── */
   const ext      = file.name.split('.').pop().toLowerCase()
   const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
   const path     = `receipts/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`
@@ -27,10 +34,12 @@ export async function submitOrder({ form, items, subtotal, file }) {
     )
   }
 
-  /* ── 2. Insertar pedido en orders ── */
-  const { data: order, error: orderError } = await supabase
+  /* ── 3. Insertar pedido en orders (sin .select() — no requiere policy SELECT) ── */
+  const { error: orderError } = await supabase
     .from('orders')
     .insert({
+      id:                   orderId,
+      user_id:              userId,
       customer_name:        form.nombre.trim(),
       customer_lastname:    form.apellido.trim(),
       customer_email:       form.email.trim().toLowerCase(),
@@ -46,8 +55,6 @@ export async function submitOrder({ form, items, subtotal, file }) {
       total:                subtotal,
       status:               'pending_review',
     })
-    .select('id')
-    .single()
 
   if (orderError) {
     throw new Error(
@@ -55,9 +62,9 @@ export async function submitOrder({ form, items, subtotal, file }) {
     )
   }
 
-  /* ── 3. Insertar items del pedido en order_items ── */
+  /* ── 4. Insertar items del pedido en order_items ── */
   const orderItems = items.map((item) => ({
-    order_id:      order.id,
+    order_id:      orderId,
     product_id:    item.id,
     product_name:  item.name,
     product_price: item.price,
@@ -77,5 +84,5 @@ export async function submitOrder({ form, items, subtotal, file }) {
     )
   }
 
-  return { orderId: order.id }
+  return { orderId }
 }

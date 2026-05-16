@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { CartProvider } from './context/CartContext.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
 import CartToast from './components/CartToast.jsx'
 import Home     from './pages/Home.jsx'
 import Carrito  from './pages/Carrito.jsx'
@@ -8,18 +9,20 @@ import Cuenta   from './pages/Cuenta.jsx'
 
 export default function App() {
   return (
-    <CartProvider>
-      <BrowserRouter>
-        {/* Toast global — visible desde cualquier página */}
-        <CartToast />
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          {/* Toast global — visible desde cualquier página */}
+          <CartToast />
 
-        <Routes>
-          <Route path="/"         element={<Home />} />
-          <Route path="/carrito"  element={<Carrito />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/cuenta"   element={<Cuenta />} />
-        </Routes>
-      </BrowserRouter>
-    </CartProvider>
+          <Routes>
+            <Route path="/"         element={<Home />} />
+            <Route path="/carrito"  element={<Carrito />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/cuenta"   element={<Cuenta />} />
+          </Routes>
+        </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
   )
 }

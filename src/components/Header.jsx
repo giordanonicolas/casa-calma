@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
+import { useAuth } from '../context/AuthContext.jsx'
 
 /* ══════════════════════════════════════════════
    CONSTANTES
@@ -89,6 +90,10 @@ export default function Header() {
   const [colOpen, setColOpen]       = useState(false)
   const headerRef = useRef(null)
   const { totalQty } = useCart()
+  const { user, profile } = useAuth()
+
+  // Nombre corto para mostrar en el header
+  const displayName = profile?.nombre || (user?.email?.split('@')[0]) || null
 
   // Sombra suave al hacer scroll
   useEffect(() => {
@@ -192,15 +197,18 @@ export default function Header() {
                 Contacto
               </a>
 
-              {/* Mi cuenta */}
+              {/* Mi cuenta / nombre si está logueado */}
               <Link
                 to="/cuenta"
-                style={navLinkSt}
+                style={{
+                  ...navLinkSt,
+                  color: user ? 'var(--charcoal)' : 'var(--taupe)',
+                }}
                 onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--charcoal)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--taupe)')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = user ? 'var(--charcoal)' : 'var(--taupe)')}
               >
                 <AccountIcon style={{ width: '0.85rem', height: '0.85rem' }} />
-                Mi cuenta
+                {displayName ? displayName : 'Mi cuenta'}
               </Link>
 
               {/* Carrito — texto + ícono + contador */}
@@ -296,7 +304,7 @@ export default function Header() {
               { label: 'Nosotros',   href: '#nosotros', isLink: false },
               { label: 'WhatsApp',   href: WA_URL,      isLink: false, external: true },
               { label: 'Contacto',   href: '#contacto', isLink: false },
-              { label: 'Mi cuenta',  href: '/cuenta',   isLink: true  },
+              { label: displayName ? `Hola, ${displayName}` : 'Mi cuenta', href: '/cuenta', isLink: true },
             ].map(({ label, href, isLink, external }, i) => (
               <div key={label} className="border-b py-3" style={{ borderColor: 'var(--linen-mid)' }}>
                 {isLink ? (
