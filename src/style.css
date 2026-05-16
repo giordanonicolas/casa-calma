@@ -1,0 +1,286 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ══════════════════════════════════════════════
+   VARIABLES CSS
+══════════════════════════════════════════════ */
+:root {
+  --ivory:         #FAFAF7;
+  --cream:         #F5F0E8;
+  --linen-pale:    #EDE8DF;
+  --linen-mid:     #D9CFBE;
+  --linen-warm:    #C8B89A;
+  --charcoal:      #3A3530;
+  --leather:       #8B6F47;
+  --leather-light: #A88050;
+  --leather-dark:  #6B5035;
+  --taupe:         #9E9082;
+  --warm-gray:     #6B6460;
+  --stone:         #B5ADA0;
+}
+
+/* ══════════════════════════════════════════════
+   BASE
+══════════════════════════════════════════════ */
+@layer base {
+  html { scroll-behavior: smooth; }
+
+  body {
+    @apply antialiased;
+    background-color: var(--ivory);
+    color: var(--warm-gray);
+    font-family: 'DM Sans', system-ui, sans-serif;
+  }
+
+  ::selection {
+    background-color: var(--linen-warm);
+    color: var(--leather-dark);
+  }
+
+  /* Inputs del checkout */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--linen-warm) !important;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    color: var(--charcoal);
+  }
+}
+
+/* ══════════════════════════════════════════════
+   COMPONENTES — sin clases custom en @apply
+══════════════════════════════════════════════ */
+@layer components {
+
+  /* ── Eyebrow label ── */
+  .eyebrow {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--taupe);
+  }
+
+  /* ── Botones ── */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-8 py-3.5;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    background-color: var(--charcoal);
+    color: var(--ivory);
+    transition: background-color 0.35s ease, transform 0.35s ease;
+  }
+  .btn-primary:hover {
+    background-color: var(--leather);
+    transform: translateY(-1px);
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center gap-2 px-8 py-3.5 border;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    border-color: var(--charcoal);
+    color: var(--charcoal);
+    transition: background-color 0.35s ease, color 0.35s ease;
+  }
+  .btn-outline:hover {
+    background-color: var(--charcoal);
+    color: var(--ivory);
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 border-b;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    border-color: transparent;
+    color: var(--taupe);
+    transition: border-color 0.3s ease, color 0.3s ease;
+  }
+  .btn-ghost:hover {
+    border-color: var(--taupe);
+    color: var(--charcoal);
+  }
+
+  /* ── Nav link ── */
+  .nav-link {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.65rem;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--taupe);
+    transition: color 0.25s ease;
+  }
+  .nav-link:hover { color: var(--charcoal); }
+
+  /* ── Mega menu (dropdown) ── */
+  .mega-menu {
+    @apply absolute z-50;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 220px;
+    padding-top: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+  }
+  .group\/dropdown:hover .mega-menu {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .mega-menu-inner {
+    @apply py-4 border;
+    background-color: var(--ivory);
+    border-color: var(--linen-mid);
+    box-shadow: 0 8px 32px rgba(58, 53, 48, 0.07);
+  }
+
+  .mega-link {
+    @apply block px-6 py-2.5;
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.63rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--taupe);
+    transition: color 0.2s ease, background-color 0.2s ease;
+  }
+  .mega-link:hover {
+    color: var(--charcoal);
+    background-color: var(--cream);
+  }
+
+  /* ── Category card ── */
+  .cat-card {
+    @apply relative overflow-hidden cursor-pointer;
+    display: block;
+  }
+  .cat-card-img {
+    @apply w-full h-full object-cover;
+    transition: transform 700ms ease;
+  }
+  .cat-card:hover .cat-card-img {
+    transform: scale(1.04);
+  }
+  .cat-card-label {
+    @apply absolute bottom-0 left-0 right-0 p-5;
+    background: linear-gradient(to top, rgba(58,53,48,0.65) 0%, transparent 100%);
+    transition: background 0.3s ease;
+  }
+
+  /* ── Product card ── */
+  .product-card { @apply cursor-pointer; }
+
+  .product-img-container {
+    @apply overflow-hidden;
+    background-color: var(--linen-pale);
+  }
+  .product-img-container img {
+    @apply w-full h-full object-cover;
+    transition: transform 600ms ease;
+  }
+  .product-card:hover .product-img-container img {
+    transform: scale(1.04);
+  }
+
+  /* ── Cart badge ── */
+  .cart-badge {
+    position: absolute;
+    top: -7px;
+    right: -8px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background-color: var(--leather);
+    color: var(--ivory);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 0.52rem;
+    font-weight: 500;
+    letter-spacing: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  /* ── Topbar separador ── */
+  .topbar-dot::before {
+    content: '·';
+    margin: 0 0.75rem;
+    opacity: 0.4;
+  }
+
+  /* ── Textura de lino ── */
+  .texture-linen {
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 3px,
+        rgba(200,184,154,0.05) 3px, rgba(200,184,154,0.05) 6px),
+      repeating-linear-gradient(90deg, transparent, transparent 3px,
+        rgba(200,184,154,0.05) 3px, rgba(200,184,154,0.05) 6px);
+  }
+
+  /* ── Placeholders de categorías ── */
+  .ph-almohadones { background: linear-gradient(135deg, #E8E0D5 0%, #D4CABC 100%); }
+  .ph-mantas      { background: linear-gradient(135deg, #DDD5C8 0%, #C8B89A 100%); }
+  .ph-caminos     { background: linear-gradient(135deg, #E4DDD4 0%, #D0C6B8 100%); }
+  .ph-fundas      { background: linear-gradient(135deg, #E0DAD4 0%, #CCB8A8 80%); }
+  .ph-cuchas      { background: linear-gradient(135deg, #C4C8C0 0%, #B2BEB5 100%); }
+  .ph-accesorios  { background: linear-gradient(135deg, #D8C8C0 0%, #CEB5AD 100%); }
+}
+
+/* ══════════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--ivory); }
+::-webkit-scrollbar-thumb { background: var(--linen-warm); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: var(--leather); }
+
+/* ══════════════════════════════════════════════
+   ANIMACIONES
+══════════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up   { animation: fadeUp 0.7s ease both; }
+.fade-up-1 { animation-delay: 0.10s; }
+.fade-up-2 { animation-delay: 0.22s; }
+.fade-up-3 { animation-delay: 0.38s; }
+.fade-up-4 { animation-delay: 0.52s; }
+
+/* ══════════════════════════════════════════════
+   REVEAL ON SCROLL
+══════════════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.10s; }
+.reveal-delay-2 { transition-delay: 0.22s; }
+.reveal-delay-3 { transition-delay: 0.34s; }
+.reveal-delay-4 { transition-delay: 0.46s; }
