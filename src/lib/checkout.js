@@ -84,5 +84,23 @@ export async function submitOrder({ form, items, subtotal, file, userId = null }
     )
   }
 
+  /* ── 5. Notificar por Telegram (fire-and-forget) ──
+     Si falla el bot, la compra ya está confirmada — no se revierte ni se muestra
+     error al cliente. Solo queda registrado en consola. */
+  console.log('[checkout] calling notify-order', orderId)
+
+  supabase.functions
+    .invoke('notify-order', { body: { order_id: orderId } })
+    .then(({ data, error }) => {
+      if (error) {
+        console.error('[checkout] notify-order error', error)
+      } else {
+        console.log('[checkout] notify-order success', data)
+      }
+    })
+    .catch((err) => {
+      console.error('[checkout] notify-order exception', err?.message ?? err)
+    })
+
   return { orderId }
 }
