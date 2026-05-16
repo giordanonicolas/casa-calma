@@ -35,6 +35,33 @@ export const products = [
     price: 2100,
     image: '/images/camino-mesa-lino.png',
   },
+  {
+    id: 5,
+    slug: 'cucha-donut-sherpa',
+    category: 'Cuchas',
+    name: 'Cama Donut Sherpa',
+    description: 'Sherpa bouclé · Ø 60 cm · Beige',
+    price: 4200,
+    image: '/images/cucha-donut-sherpa.png',
+  },
+  {
+    id: 6,
+    slug: 'cucha-cueva-gato',
+    category: 'Cuchas',
+    name: 'Cueva Sherpa para Gato',
+    description: 'Sherpa bouclé · Ø 45 cm · Beige',
+    price: 3800,
+    image: '/images/cucha-cueva-gato.png',
+  },
+  {
+    id: 7,
+    slug: 'cucha-rectangular-lino',
+    category: 'Cuchas',
+    name: 'Cama Rectangular Lino',
+    description: 'Lino natural · 80×60 cm · Arena',
+    price: 5500,
+    image: '/images/cucha-rectangular-lino.png',
+  },
 ]
 
 export const categories = [
@@ -75,7 +102,7 @@ export const categories = [
     name: 'Cuchas',
     eyebrow: 'Para tu mascota',
     ph: 'ph-cuchas',
-    image: null,
+    image: '/images/cucha-donut-sherpa.png',
     span: '',
   },
   {
