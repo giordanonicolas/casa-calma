@@ -9,8 +9,12 @@ import { useAuth } from '../context/AuthContext.jsx'
 const WA_URL = 'https://wa.me/59891749718?text=Hola%20Casa%20Calma%2C%20quisiera%20consultar'
 
 const NAV_CATEGORIES = [
-  'Almohadones', 'Mantas', 'Caminos de mesa',
-  'Fundas', 'Cuchas para perros', 'Accesorios',
+  { name: 'Almohadones',    slug: 'almohadones'     },
+  { name: 'Mantas',         slug: 'mantas'           },
+  { name: 'Caminos de mesa',slug: 'caminos-de-mesa'  },
+  { name: 'Fundas',         slug: 'fundas'           },
+  { name: 'Cuchas',         slug: 'cuchas'           },
+  { name: 'Accesorios',     slug: 'accesorios'       },
 ]
 
 /* ══════════════════════════════════════════════
@@ -148,17 +152,25 @@ export default function Header() {
 
               {/* Dropdown Colección */}
               <div className="relative group/dropdown">
-                <button
-                  className="nav-link flex items-center gap-1.5 py-1 bg-transparent border-none cursor-pointer"
-                  aria-haspopup="true"
+                <Link
+                  to="/coleccion"
+                  className="nav-link flex items-center gap-1.5 py-1"
+                  style={{ textDecoration: 'none' }}
                 >
                   Colección
                   <ChevronIcon className="w-2 h-2 transition-transform duration-300 group-hover/dropdown:rotate-180" />
-                </button>
+                </Link>
                 <div className="mega-menu">
                   <div className="mega-menu-inner">
-                    {NAV_CATEGORIES.map((cat) => (
-                      <a key={cat} href="#categorias" className="mega-link">{cat}</a>
+                    {NAV_CATEGORIES.map(({ name, slug }) => (
+                      <Link
+                        key={slug}
+                        to={`/coleccion/${slug}`}
+                        className="mega-link"
+                        style={{ textDecoration: 'none' }}
+                      >
+                        {name}
+                      </Link>
                     ))}
                   </div>
                 </div>
@@ -274,25 +286,34 @@ export default function Header() {
           >
             {/* Colección — acordeón */}
             <div className="border-b py-3" style={{ borderColor: 'var(--linen-mid)' }}>
-              <button
-                onClick={() => setColOpen((v) => !v)}
-                className="w-full flex items-center justify-between"
-                style={{ fontSize: '0.62rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--taupe)' }}
-              >
-                Colección
-                <ChevronIcon className={`w-2.5 h-2.5 transition-transform duration-200 ${colOpen ? 'rotate-180' : ''}`} />
-              </button>
+              <div className="flex items-center justify-between">
+                <Link
+                  to="/coleccion"
+                  onClick={closeMobile}
+                  style={{ fontSize: '0.62rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--taupe)', textDecoration: 'none' }}
+                >
+                  Colección
+                </Link>
+                <button
+                  onClick={() => setColOpen((v) => !v)}
+                  className="p-1"
+                  style={{ color: 'var(--taupe)' }}
+                  aria-label="Expandir categorías"
+                >
+                  <ChevronIcon className={`w-2.5 h-2.5 transition-transform duration-200 ${colOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
               {colOpen && (
                 <div className="pt-3 pl-4 flex flex-col gap-2.5">
-                  {NAV_CATEGORIES.map((cat) => (
-                    <a
-                      key={cat}
-                      href="#categorias"
+                  {NAV_CATEGORIES.map(({ name, slug }) => (
+                    <Link
+                      key={slug}
+                      to={`/coleccion/${slug}`}
                       onClick={closeMobile}
                       style={{ display: 'block', fontSize: '0.56rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--stone)', textDecoration: 'none' }}
                     >
-                      {cat}
-                    </a>
+                      {name}
+                    </Link>
                   ))}
                 </div>
               )}

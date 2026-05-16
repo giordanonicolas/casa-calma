@@ -67,6 +67,7 @@ export const products = [
 export const categories = [
   {
     id: 'almohadones',
+    slug: 'almohadones',
     name: 'Almohadones',
     eyebrow: 'Textiles',
     ph: 'ph-almohadones',
@@ -75,6 +76,7 @@ export const categories = [
   },
   {
     id: 'mantas',
+    slug: 'mantas',
     name: 'Mantas',
     eyebrow: 'Para el descanso',
     ph: 'ph-mantas',
@@ -83,6 +85,7 @@ export const categories = [
   },
   {
     id: 'caminos',
+    slug: 'caminos-de-mesa',
     name: 'Caminos de mesa',
     eyebrow: 'Mesa & comedor',
     ph: 'ph-caminos',
@@ -91,6 +94,7 @@ export const categories = [
   },
   {
     id: 'fundas',
+    slug: 'fundas',
     name: 'Fundas',
     eyebrow: 'Almohadones',
     ph: 'ph-fundas',
@@ -99,6 +103,7 @@ export const categories = [
   },
   {
     id: 'cuchas',
+    slug: 'cuchas',
     name: 'Cuchas',
     eyebrow: 'Para tu mascota',
     ph: 'ph-cuchas',
@@ -107,6 +112,7 @@ export const categories = [
   },
   {
     id: 'accesorios',
+    slug: 'accesorios',
     name: 'Accesorios',
     eyebrow: 'Complementos',
     ph: 'ph-accesorios',

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { categories } from '../data/products.js'
 
 export default function Categories() {
@@ -16,11 +17,11 @@ export default function Categories() {
         {/* Grid 3×2 */}
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {categories.map((cat, i) => (
-            <a
+            <Link
               key={cat.id}
-              href={`#coleccion`}
+              to={`/coleccion/${cat.slug}`}
               className={`cat-card reveal reveal-delay-${i % 3} ${cat.span}`}
-              style={{ aspectRatio: cat.span ? '4/3' : '4/5', display: 'block' }}
+              style={{ aspectRatio: cat.span ? '4/3' : '4/5', display: 'block', textDecoration: 'none' }}
             >
               {/* Fondo placeholder */}
               <div className={`${cat.ph} w-full h-full relative overflow-hidden`}>
@@ -48,7 +49,7 @@ export default function Categories() {
                   </p>
                 </div>
               </div>
-            </a>
+            </Link>
           ))}
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { products } from '../data/products.js'
 import ProductCard from './ProductCard.jsx'
 
@@ -14,9 +15,9 @@ export default function ProductGrid() {
               Piezas de temporada
             </h2>
           </div>
-          <a href="#categorias" className="btn-ghost self-start md:self-auto reveal">
+          <Link to="/coleccion" className="btn-ghost self-start md:self-auto reveal">
             Ver todo →
-          </a>
+          </Link>
         </div>
 
         {/* Grid */}
