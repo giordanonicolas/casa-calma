@@ -1,9 +1,18 @@
-const coleccion = ['Almohadones', 'Mantas', 'Caminos de mesa', 'Fundas', 'Cuchas para perros', 'Accesorios']
-const empresa   = [
-  { label: 'Nosotros',           href: '#nosotros' },
-  { label: 'Cuidado del textil', href: '#' },
-  { label: 'Envíos y devoluciones', href: '#' },
-  { label: 'Contacto',          href: '#contacto' },
+import { Link } from 'react-router-dom'
+
+const coleccion = [
+  { label: 'Almohadones',       to: '/coleccion/almohadones' },
+  { label: 'Mantas',            to: '/coleccion/mantas' },
+  { label: 'Caminos de mesa',   to: '/coleccion/caminos-de-mesa' },
+  { label: 'Fundas',            to: '/coleccion/fundas' },
+  { label: 'Cuchas para perros',to: '/coleccion/cuchas' },
+  { label: 'Accesorios',        to: '/coleccion/accesorios' },
+]
+const empresa = [
+  { label: 'Nosotros',             to: '/nosotros' },
+  { label: 'Cuidado del textil',   to: '/cuidado-del-textil' },
+  { label: 'Envíos y devoluciones',to: '/envios-y-devoluciones' },
+  { label: 'Contacto',             to: '/contacto' },
 ]
 
 function WaIcon() {
@@ -14,13 +23,21 @@ function WaIcon() {
   )
 }
 
-function FooterLink({ href, children, external }) {
+function FooterLink({ href, to, children, external }) {
+  const cls = "font-sans text-xs font-light transition-colors duration-200 hover:text-ivory"
+  if (to) {
+    return (
+      <Link to={to} className={cls} style={{ color: 'var(--taupe)' }}>
+        {children}
+      </Link>
+    )
+  }
   return (
     <a
       href={href}
       target={external ? '_blank' : undefined}
       rel={external ? 'noopener noreferrer' : undefined}
-      className="font-sans text-xs font-light transition-colors duration-200 hover:text-ivory"
+      className={cls}
       style={{ color: 'var(--taupe)' }}
     >
       {children}
@@ -72,8 +89,8 @@ export default function Footer() {
           <div>
             <p className="eyebrow block mb-5" style={{ color: 'var(--linen-warm)' }}>Colección</p>
             <nav className="flex flex-col gap-3">
-              {coleccion.map((item) => (
-                <FooterLink key={item} href="#categorias">{item}</FooterLink>
+              {coleccion.map(({ label, to }) => (
+                <FooterLink key={label} to={to}>{label}</FooterLink>
               ))}
             </nav>
           </div>
@@ -82,8 +99,8 @@ export default function Footer() {
           <div>
             <p className="eyebrow block mb-5" style={{ color: 'var(--linen-warm)' }}>Empresa</p>
             <nav className="flex flex-col gap-3">
-              {empresa.map(({ label, href }) => (
-                <FooterLink key={label} href={href}>{label}</FooterLink>
+              {empresa.map(({ label, to }) => (
+                <FooterLink key={label} to={to}>{label}</FooterLink>
               ))}
             </nav>
           </div>
