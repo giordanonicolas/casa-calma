@@ -1,8 +1,29 @@
-import { createContext, useContext, useReducer, useEffect, useState } from 'react'
+import { createContext, useContext, useReducer, useEffect, useRef, useState } from 'react'
+import { useAuth } from './AuthContext.jsx'
 
 const CartContext = createContext(null)
-const STORAGE_KEY = 'cc_cart_v1'
 
+/* ══════════════════════════════════════════════
+   CLAVES DE LOCALSTORAGE
+   - Invitado:  casaCalma_cart_guest
+   - Logueado:  casaCalma_cart_user_<uid>
+══════════════════════════════════════════════ */
+const GUEST_KEY  = 'casaCalma_cart_guest'
+const userKey    = (id) => `casaCalma_cart_user_${id}`
+const storageKey = (userId) => (userId ? userKey(userId) : GUEST_KEY)
+
+function loadFromStorage(userId) {
+  try {
+    const raw = localStorage.getItem(storageKey(userId))
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return [] // datos corruptos — ignorar
+  }
+}
+
+/* ══════════════════════════════════════════════
+   REDUCER
+══════════════════════════════════════════════ */
 function cartReducer(state, action) {
   switch (action.type) {
     case 'ADD': {
@@ -33,42 +54,89 @@ function cartReducer(state, action) {
   }
 }
 
+/* ══════════════════════════════════════════════
+   PROVIDER
+══════════════════════════════════════════════ */
 export function CartProvider({ children }) {
+  // useAuth() funciona porque CartProvider es hijo de AuthProvider en App.jsx
+  const { user, loading: authLoading } = useAuth()
+
   const [items, dispatch] = useReducer(cartReducer, [])
-  const [toast, setToast] = useState(null) // { name, id } del producto recién agregado
+  const [toast, setToast] = useState(null)
 
-  // Cargar desde localStorage al montar
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) dispatch({ type: 'LOAD', items: JSON.parse(saved) })
-    } catch {
-      // datos corruptos — ignorar
-    }
-  }, [])
+  /**
+   * activeKeyRef — clave de localStorage actualmente en uso.
+   * Se actualiza ANTES de dispatch para que el efecto de persistencia
+   * siempre escriba en la clave correcta, sin condiciones de carrera.
+   */
+  const activeKeyRef = useRef(null)
 
-  // Persistir en localStorage cada vez que cambia el carrito
+  /**
+   * readyRef — se pone en true una vez que auth resolvió y se hizo
+   * el primer LOAD. Impide que el efecto de persistencia escriba
+   * antes de haber leído.
+   */
+  const readyRef = useRef(false)
+
+  /* ──────────────────────────────────────────────
+     Efecto principal: cambio de usuario (login / logout / mount)
+     Espera a que auth deje de cargar para evitar cargar el carrito
+     de invitado y luego pisarlo con el del usuario.
+  ────────────────────────────────────────────── */
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items))
+    if (authLoading) return // auth todavía resolviendo — no hacer nada
+
+    const uid = user?.id ?? null
+    const key = storageKey(uid)
+
+    // Actualizar clave activa ANTES del dispatch
+    activeKeyRef.current = key
+    readyRef.current     = true
+
+    // Cargar el carrito correspondiente (usuario o invitado)
+    dispatch({ type: 'LOAD', items: loadFromStorage(uid) })
+  }, [user, authLoading])
+
+  /* ──────────────────────────────────────────────
+     Persistir en la clave activa cada vez que cambian los items.
+     readyRef garantiza que no se escriba en localStorage antes del
+     primer load (evita sobreescribir datos guardados con [] vacío).
+  ────────────────────────────────────────────── */
+  useEffect(() => {
+    if (!readyRef.current || !activeKeyRef.current) return
+    localStorage.setItem(activeKeyRef.current, JSON.stringify(items))
   }, [items])
 
-  // Auto-ocultar toast después de 3.5 s
+  /* ── Toast: auto-ocultar después de 3.5 s ── */
   useEffect(() => {
     if (!toast) return
     const t = setTimeout(() => setToast(null), 3500)
     return () => clearTimeout(t)
   }, [toast])
 
+  /* ══════════════════════════════════════════════
+     ACCIONES
+  ══════════════════════════════════════════════ */
   const addItem = (product) => {
     dispatch({ type: 'ADD', product })
     setToast({ id: product.id, name: product.name })
   }
 
-  const removeItem = (id)  => dispatch({ type: 'REMOVE', id })
-  const inc        = (id)  => dispatch({ type: 'INC', id })
-  const dec        = (id)  => dispatch({ type: 'DEC', id })
-  const clear      = ()    => dispatch({ type: 'CLEAR' })
-  const dismissToast = ()  => setToast(null)
+  const removeItem   = (id) => dispatch({ type: 'REMOVE', id })
+  const inc          = (id) => dispatch({ type: 'INC',    id })
+  const dec          = (id) => dispatch({ type: 'DEC',    id })
+  const dismissToast = ()   => setToast(null)
+
+  /**
+   * clear — vacía el carrito y borra la clave de localStorage del
+   * usuario/invitado actual. Se llama tras compra exitosa.
+   */
+  const clear = () => {
+    dispatch({ type: 'CLEAR' })
+    if (activeKeyRef.current) {
+      localStorage.removeItem(activeKeyRef.current)
+    }
+  }
 
   const totalQty = items.reduce((sum, i) => sum + i.qty, 0)
   const subtotal  = items.reduce((sum, i) => sum + i.price * i.qty, 0)
@@ -86,6 +154,9 @@ export function CartProvider({ children }) {
   )
 }
 
+/* ══════════════════════════════════════════════
+   HOOK
+══════════════════════════════════════════════ */
 export function useCart() {
   const ctx = useContext(CartContext)
   if (!ctx) throw new Error('useCart must be used within <CartProvider>')
