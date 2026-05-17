@@ -1,20 +1,16 @@
 import { supabase } from './supabase.js'
 
 /**
- * Sube el comprobante y llama al RPC place_order que:
- *  1. Verifica stock con FOR UPDATE (evita race conditions)
- *  2. Crea el pedido y los items
- *  3. Descuenta stock atómicamente
- *
- * Si falla el stock o cualquier operación, la transacción se revierte sola.
+ * Sube el comprobante de pago a Storage, inserta el pedido en `orders`
+ * y sus items en `order_items`, y dispara la notificación de Telegram.
  *
  * @param {{ form, items, subtotal, file, userId? }} param
  * @returns {{ orderId: string }}
- * @throws Error con mensaje legible
+ * @throws Error con mensaje legible para el usuario
  */
 export async function submitOrder({ form, items, subtotal, file, userId = null }) {
 
-  /* ── 1. Generar ID del pedido en el cliente ── */
+  /* ── 1. Generar ID del pedido ── */
   const orderId = crypto.randomUUID()
 
   /* ── 2. Subir comprobante a Storage ── */
@@ -35,72 +31,52 @@ export async function submitOrder({ form, items, subtotal, file, userId = null }
     )
   }
 
-  /* ── 3. Construir el array de items para el RPC ──
-     Usamos `slug` como identificador — el RPC lo resuelve a UUID internamente.
-     Si el item viene del fallback local (sin slug), usamos el id como slug temporal. */
-  const rpcItems = items.map((item) => ({
-    product_slug:  item.slug  || String(item.id),
-    product_name:  item.name,
-    product_price: item.price,
-    quantity:      item.qty,
-  }))
-
-  /* ── 4. Llamar al RPC atómico ── */
-  console.log('[checkout] llamando place_order RPC', orderId)
-
-  const { data: rpcResult, error: rpcError } = await supabase.rpc('place_order', {
-    p_order_id:             orderId,
-    p_user_id:              userId,
-    p_customer_name:        form.nombre.trim(),
-    p_customer_lastname:    form.apellido.trim(),
-    p_customer_email:       form.email.trim().toLowerCase(),
-    p_customer_phone:       form.telefono.trim(),
-    p_shipping_street:      form.calle.trim(),
-    p_shipping_apartment:   form.apartamento?.trim() || null,
-    p_shipping_city:        form.ciudad.trim(),
-    p_shipping_department:  form.departamento,
-    p_shipping_postal_code: form.cp?.trim()          || null,
-    p_shipping_notes:       form.comentarios?.trim() || null,
-    p_payment_receipt_path: path,
-    p_total:                subtotal,
-    p_items:                rpcItems,
+  /* ── 3. Insertar pedido en orders ── */
+  const { error: orderError } = await supabase.from('orders').insert({
+    id:                    orderId,
+    user_id:               userId,
+    customer_name:         form.nombre.trim(),
+    customer_lastname:     form.apellido.trim(),
+    customer_email:        form.email.trim().toLowerCase(),
+    customer_phone:        form.telefono.trim(),
+    shipping_street:       form.calle.trim(),
+    shipping_apartment:    form.apartamento?.trim()  || null,
+    shipping_city:         form.ciudad.trim(),
+    shipping_department:   form.departamento,
+    shipping_postal_code:  form.cp?.trim()           || null,
+    shipping_notes:        form.comentarios?.trim()  || null,
+    payment_method:        'bank_transfer',
+    payment_receipt_path:  path,
+    total:                 subtotal,
+    status:                'pending_review',
   })
 
-  if (rpcError) {
-    console.error('[checkout] error RPC:', rpcError)
+  if (orderError) {
     throw new Error(
-      `No se pudo registrar el pedido. Intentá de nuevo. (${rpcError.message})`
+      `No se pudo registrar el pedido. Intentá de nuevo. (${orderError.message})`
     )
   }
 
-  // El RPC devuelve { success, order_id } o { success: false, error }
-  if (rpcResult && rpcResult.success === false) {
-    const msg = rpcResult.error || 'Error desconocido'
-    console.error('[checkout] place_order falló:', msg)
+  /* ── 4. Insertar items en order_items ── */
+  const orderItems = items.map((item) => ({
+    order_id:      orderId,
+    product_id:    String(item.id),
+    product_name:  item.name,
+    product_price: item.price,
+    quantity:      item.qty,
+    subtotal:      item.price * item.qty,
+  }))
 
-    // Mensajes de error legibles
-    if (msg.includes('SIN_STOCK:')) {
-      const parts = msg.split(':')
-      const productName = parts[1] || 'un producto'
-      const available   = parts[3] || '0'
-      throw new Error(
-        `"${productName}" se quedó sin stock antes de confirmar tu compra. ` +
-        `Stock disponible: ${available}. Por favor ajustá tu carrito.`
-      )
-    }
-    if (msg.includes('PRODUCTO_NO_ENCONTRADO:')) {
-      throw new Error(
-        `Uno de los productos no está disponible. Actualizá la página e intentá de nuevo.`
-      )
-    }
-    throw new Error(`No se pudo procesar el pedido. ${msg}`)
+  const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+
+  if (itemsError) {
+    console.error('[checkout] error insertando order_items:', itemsError)
+    // No bloqueamos el flujo — el pedido ya quedó registrado
   }
 
-  console.log('[checkout] place_order exitoso', rpcResult)
+  console.log('[checkout] pedido registrado', orderId)
 
   /* ── 5. Notificar por Telegram (fire-and-forget) ── */
-  console.log('[checkout] calling notify-order', orderId)
-
   supabase.functions
     .invoke('notify-order', { body: { order_id: orderId } })
     .then(({ data, error }) => {

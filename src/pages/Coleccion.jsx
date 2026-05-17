@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { categories } from '../data/products.js'
-import { fetchProducts } from '../lib/products.js'
+import { products, categories } from '../data/products.js'
 import ProductCard from '../components/ProductCard.jsx'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
@@ -29,38 +28,21 @@ const CHIPS = [
 export default function Coleccion() {
   const { categoria } = useParams()
 
-  const [allProducts, setAllProducts] = useState([])
-  const [loadingProducts, setLoadingProducts] = useState(true)
-
-  // Carga productos desde Supabase al montar
-  useEffect(() => {
-    let cancelled = false
-    setLoadingProducts(true)
-    fetchProducts().then((data) => {
-      if (!cancelled) {
-        setAllProducts(data)
-        setLoadingProducts(false)
-      }
-    })
-    return () => { cancelled = true }
-  }, [])
-
   const catInfo = categoria ? CATEGORY_MAP[categoria] : null
   const isValidCategory = !categoria || Boolean(catInfo)
 
-  // Filtrar por categoría
+  // Filtrar por categoría desde el catálogo local
   const filtered = catInfo
-    ? allProducts.filter((p) => p.category === catInfo.productCategory)
-    : allProducts
+    ? products.filter((p) => p.category === catInfo.productCategory)
+    : products
 
   const pageTitle = catInfo ? catInfo.label : 'Colección'
   const pageDesc  = catInfo
     ? `Todos nuestros ${catInfo.label.toLowerCase()} — piezas cuidadas, materiales naturales.`
     : 'Textiles y decoración para el hogar. Cada pieza, hecha con intención.'
 
-  /* Reveal on scroll — al cambiar categoría o cuando termina la carga */
+  /* Reveal on scroll — al cambiar categoría */
   useEffect(() => {
-    if (loadingProducts) return
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
@@ -74,7 +56,7 @@ export default function Coleccion() {
     )
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el))
     return () => observer.disconnect()
-  }, [categoria, loadingProducts])
+  }, [categoria])
 
   /* ── Categoría inválida ── */
   if (!isValidCategory) {
@@ -186,20 +168,7 @@ export default function Coleccion() {
         <div className="px-6 py-14 md:py-20">
           <div className="max-w-7xl mx-auto">
 
-            {loadingProducts ? (
-              /* Skeleton de carga */
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                {[0,1,2,3].map((i) => (
-                  <div key={i} style={{ animation: 'pulse 1.5s ease-in-out infinite' }}>
-                    <div style={{ aspectRatio: '3/4', backgroundColor: 'var(--linen-pale)', marginBottom: '1rem' }} />
-                    <div style={{ height: 12, backgroundColor: 'var(--linen-pale)', marginBottom: 8, width: '60%' }} />
-                    <div style={{ height: 14, backgroundColor: 'var(--linen-pale)', marginBottom: 8 }} />
-                    <div style={{ height: 12, backgroundColor: 'var(--linen-pale)', marginBottom: 12, width: '40%' }} />
-                    <div style={{ height: 32, backgroundColor: 'var(--linen-pale)' }} />
-                  </div>
-                ))}
-              </div>
-            ) : filtered.length === 0 ? (
+            {filtered.length === 0 ? (
               <div className="text-center py-20 reveal">
                 <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="1"
                   strokeLinecap="round" strokeLinejoin="round"

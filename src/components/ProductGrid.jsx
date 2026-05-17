@@ -1,18 +1,10 @@
-import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchProducts } from '../lib/products.js'
+import { products } from '../data/products.js'
 import ProductCard from './ProductCard.jsx'
 
 export default function ProductGrid() {
-  const [products, setProducts] = useState([])
-
-  useEffect(() => {
-    fetchProducts().then((data) => {
-      // Mostrar los destacados (featured=true) o los primeros 4
-      const featured = data.filter((p) => p.featured)
-      setProducts(featured.length > 0 ? featured.slice(0, 4) : data.slice(0, 4))
-    })
-  }, [])
+  // Primeros 4 productos del catálogo local
+  const featured = products.slice(0, 4)
 
   return (
     <section id="coleccion" className="py-20 md:py-28 px-6" style={{ backgroundColor: 'var(--cream)' }}>
@@ -33,7 +25,7 @@ export default function ProductGrid() {
 
         {/* Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {products.map((product, i) => (
+          {featured.map((product, i) => (
             <ProductCard key={product.id} product={product} delay={i} />
           ))}
         </div>
