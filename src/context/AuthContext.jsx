@@ -11,36 +11,53 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  /* Carga el perfil extendido (nombre, apellido, teléfono) */
+  /* Carga el perfil extendido (nombre, apellido, teléfono).
+     PGRST116 = sin filas — normal para usuarios nuevos, no es un error real. */
   const loadProfile = async (userId) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
+      if (error && error.code !== 'PGRST116') {
+        console.error('[auth] error al cargar perfil:', error.message)
+      }
       setProfile(data ?? null)
-    } catch {
+    } catch (err) {
+      console.error('[auth] excepción al cargar perfil:', err?.message ?? err)
       setProfile(null)
     }
   }
 
   useEffect(() => {
-    /* Sesión existente al montar — awaiteamos loadProfile antes de
-       setLoading(false) para que Admin.jsx nunca vea profile=null
-       con authLoading=false al mismo tiempo. */
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      const u = session?.user ?? null
-      setUser(u)
-      if (u) await loadProfile(u.id)
-      setLoading(false)
-    })
+    let mounted = true
+
+    /* Sesión existente al montar.
+       try/finally garantiza que setLoading(false) SIEMPRE se ejecuta,
+       incluso si getSession() o loadProfile() fallan inesperadamente. */
+    ;(async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        if (!mounted) return
+        if (error) throw error
+        const u = session?.user ?? null
+        setUser(u)
+        if (u) await loadProfile(u.id)
+      } catch (err) {
+        console.error('[auth] error al inicializar sesión:', err?.message ?? err)
+        if (mounted) setUser(null)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    })()
 
     /* Escuchar cambios de sesión (login / logout / token refresh).
        onAuthStateChange también dispara INITIAL_SESSION al montar;
        lo ignoramos porque getSession ya lo maneja arriba. */
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
+        if (!mounted) return
         const u = session?.user ?? null
         setUser(u)
         if (u) {
@@ -51,7 +68,10 @@ export function AuthProvider({ children }) {
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   /* ── Operaciones de auth ── */
