@@ -136,6 +136,7 @@ function ProductsSection() {
       .select('*')
       .order('category')
       .order('name')
+    console.log('[admin] products data', data, 'error', error)
     if (!error) setProducts(data || [])
     setLoading(false)
   }, [])
@@ -332,6 +333,7 @@ function OrdersSection() {
       .select('*')
       .order('created_at', { ascending: false })
       .limit(50)
+    console.log('[admin] orders data', data, 'error', error)
     if (!error) setOrders(data || [])
     setLoading(false)
   }, [])
@@ -623,8 +625,18 @@ export default function Admin() {
   const { user, profile, loading: authLoading } = useAuth()
   const [tab, setTab] = useState('products')  // 'products' | 'orders'
 
+  /* ── Debug logs (temporales) ── */
+  console.log('[admin] authLoading', authLoading)
+  console.log('[admin] user', user?.email ?? null)
+  console.log('[admin] profile', profile)
+  console.log('[admin] isAdmin', profile?.role === 'admin')
+
   /* ── Auth guards ── */
-  if (authLoading) {
+
+  // Mientras carga la sesión O mientras se está cargando el perfil
+  // (user existe pero profile todavía no llegó) mostramos loading.
+  // Esto evita el flash de "Acceso no autorizado" durante la carga del perfil.
+  if (authLoading || (user && profile === null)) {
     return (
       <>
         <Header />
@@ -669,6 +681,11 @@ export default function Admin() {
             </h1>
             <p className="font-sans font-light mb-8" style={{ fontSize: '0.82rem', color: 'var(--taupe)', lineHeight: 1.8 }}>
               Tu cuenta no tiene permisos de administrador.
+              {profile && (
+                <span style={{ display: 'block', marginTop: '0.5rem', fontSize: '0.7rem', color: 'var(--stone)' }}>
+                  Role actual: {profile.role ?? 'sin role'}
+                </span>
+              )}
             </p>
             <Link to="/" className="btn-outline">Volver al inicio</Link>
           </div>

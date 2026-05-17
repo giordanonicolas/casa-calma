@@ -26,21 +26,25 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    /* Sesión existente al montar */
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    /* Sesión existente al montar — awaiteamos loadProfile antes de
+       setLoading(false) para que Admin.jsx nunca vea profile=null
+       con authLoading=false al mismo tiempo. */
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       const u = session?.user ?? null
       setUser(u)
-      if (u) loadProfile(u.id)
+      if (u) await loadProfile(u.id)
       setLoading(false)
     })
 
-    /* Escuchar cambios de sesión (login / logout / token refresh) */
+    /* Escuchar cambios de sesión (login / logout / token refresh).
+       onAuthStateChange también dispara INITIAL_SESSION al montar;
+       lo ignoramos porque getSession ya lo maneja arriba. */
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         const u = session?.user ?? null
         setUser(u)
         if (u) {
-          loadProfile(u.id)
+          await loadProfile(u.id)
         } else {
           setProfile(null)
         }
