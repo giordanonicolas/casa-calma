@@ -29,18 +29,29 @@ function cartReducer(state, action) {
     case 'ADD': {
       const existing = state.find((i) => i.id === action.product.id)
       if (existing) {
+        // Si el producto tiene stock conocido, no superar el límite
+        const newQty = existing.qty + 1
+        const maxQty = typeof action.product.stock === 'number'
+          ? action.product.stock
+          : Infinity
+        if (newQty > maxQty) return state  // ya al máximo, no incrementar
         return state.map((i) =>
-          i.id === action.product.id ? { ...i, qty: i.qty + 1 } : i
+          i.id === action.product.id ? { ...i, qty: newQty } : i
         )
       }
       return [...state, { ...action.product, qty: 1 }]
     }
     case 'REMOVE':
       return state.filter((i) => i.id !== action.id)
-    case 'INC':
-      return state.map((i) =>
-        i.id === action.id ? { ...i, qty: i.qty + 1 } : i
-      )
+    case 'INC': {
+      return state.map((i) => {
+        if (i.id !== action.id) return i
+        const newQty = i.qty + 1
+        const maxQty = typeof i.stock === 'number' ? i.stock : Infinity
+        if (newQty > maxQty) return i  // no superar stock
+        return { ...i, qty: newQty }
+      })
+    }
     case 'DEC':
       return state.map((i) =>
         i.id === action.id ? { ...i, qty: Math.max(1, i.qty - 1) } : i
@@ -118,6 +129,8 @@ export function CartProvider({ children }) {
      ACCIONES
   ══════════════════════════════════════════════ */
   const addItem = (product) => {
+    // No agregar si está sin stock
+    if (typeof product.stock === 'number' && product.stock === 0) return
     dispatch({ type: 'ADD', product })
     setToast({ id: product.id, name: product.name })
   }

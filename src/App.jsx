@@ -11,6 +11,7 @@ import Nosotros              from './pages/Nosotros.jsx'
 import Contacto              from './pages/Contacto.jsx'
 import CuidadoDelTextil      from './pages/CuidadoDelTextil.jsx'
 import EnviosYDevoluciones   from './pages/EnviosYDevoluciones.jsx'
+import Admin                 from './pages/Admin.jsx'
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/contacto"                element={<Contacto />} />
             <Route path="/cuidado-del-textil"      element={<CuidadoDelTextil />} />
             <Route path="/envios-y-devoluciones"   element={<EnviosYDevoluciones />} />
+            <Route path="/admin"                   element={<Admin />} />
           </Routes>
         </BrowserRouter>
       </CartProvider>

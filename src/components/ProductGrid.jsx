@@ -1,8 +1,19 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { products } from '../data/products.js'
+import { fetchProducts } from '../lib/products.js'
 import ProductCard from './ProductCard.jsx'
 
 export default function ProductGrid() {
+  const [products, setProducts] = useState([])
+
+  useEffect(() => {
+    fetchProducts().then((data) => {
+      // Mostrar los destacados (featured=true) o los primeros 4
+      const featured = data.filter((p) => p.featured)
+      setProducts(featured.length > 0 ? featured.slice(0, 4) : data.slice(0, 4))
+    })
+  }, [])
+
   return (
     <section id="coleccion" className="py-20 md:py-28 px-6" style={{ backgroundColor: 'var(--cream)' }}>
       <div className="max-w-7xl mx-auto">
