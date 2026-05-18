@@ -1,34 +1,40 @@
 import { supabase } from './supabase.js'
 
 /**
- * Sube el comprobante de pago a Storage, inserta el pedido en `orders`
- * y sus items en `order_items`, y dispara la notificación de Telegram.
+ * Registra un pedido en Supabase.
+ * El comprobante es OPCIONAL: si se pasa `file`, se sube a Storage;
+ * si no se pasa, `payment_receipt_path` queda null.
+ * Telegram se notifica siempre, con o sin comprobante.
  *
- * @param {{ form, items, subtotal, file, userId? }} param
+ * @param {{ form, items, subtotal, file?, userId? }} param
  * @returns {{ orderId: string }}
  * @throws Error con mensaje legible para el usuario
  */
-export async function submitOrder({ form, items, subtotal, file, userId = null }) {
+export async function submitOrder({ form, items, subtotal, file = null, userId = null }) {
 
   /* ── 1. Generar ID del pedido ── */
   const orderId = crypto.randomUUID()
 
-  /* ── 2. Subir comprobante a Storage ── */
-  const ext      = file.name.split('.').pop().toLowerCase()
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-  const path     = `receipts/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`
+  /* ── 2. Subir comprobante a Storage (opcional) ── */
+  let receiptPath = null
 
-  const { error: uploadError } = await supabase.storage
-    .from('payment-receipts')
-    .upload(path, file, {
-      contentType: file.type || `image/${ext}`,
-      upsert: false,
-    })
+  if (file) {
+    const ext      = file.name.split('.').pop().toLowerCase()
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
+    receiptPath    = `receipts/${Date.now()}_${Math.random().toString(36).slice(2)}_${safeName}`
 
-  if (uploadError) {
-    throw new Error(
-      `No se pudo subir el comprobante. Verificá tu conexión e intentá de nuevo. (${uploadError.message})`
-    )
+    const { error: uploadError } = await supabase.storage
+      .from('payment-receipts')
+      .upload(receiptPath, file, {
+        contentType: file.type || `image/${ext}`,
+        upsert: false,
+      })
+
+    if (uploadError) {
+      throw new Error(
+        `No se pudo subir el comprobante. Verificá tu conexión e intentá de nuevo. (${uploadError.message})`
+      )
+    }
   }
 
   /* ── 3. Insertar pedido en orders ── */
@@ -46,7 +52,7 @@ export async function submitOrder({ form, items, subtotal, file, userId = null }
     shipping_postal_code:  form.cp?.trim()           || null,
     shipping_notes:        form.comentarios?.trim()  || null,
     payment_method:        'bank_transfer',
-    payment_receipt_path:  path,
+    payment_receipt_path:  receiptPath,        // null si no se subió comprobante
     total:                 subtotal,
     status:                'pending_review',
   })
@@ -74,7 +80,7 @@ export async function submitOrder({ form, items, subtotal, file, userId = null }
     // No bloqueamos el flujo — el pedido ya quedó registrado
   }
 
-  console.log('[checkout] pedido registrado', orderId)
+  console.log('[checkout] pedido registrado', orderId, '| comprobante:', receiptPath ?? 'sin archivo')
 
   /* ── 5. Notificar por Telegram (fire-and-forget) ── */
   supabase.functions

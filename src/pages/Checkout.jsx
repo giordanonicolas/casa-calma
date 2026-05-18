@@ -24,6 +24,27 @@ const INITIAL = {
   calle: '', apartamento: '', ciudad: '', departamento: '', cp: '', comentarios: '',
 }
 
+/* ══════════════════════════════════════════════
+   HELPERS DE LOCALSTORAGE
+══════════════════════════════════════════════ */
+const checkoutKey = (userId) =>
+  userId ? `casaCalma_checkout_user_${userId}` : 'casaCalma_checkout_guest'
+
+function loadSavedForm(userId) {
+  try {
+    const raw = localStorage.getItem(checkoutKey(userId))
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveForm(form, userId) {
+  try {
+    localStorage.setItem(checkoutKey(userId), JSON.stringify(form))
+  } catch {}
+}
+
 const BANCO = [
   ['Banco',    'A definir'],
   ['Titular',  'Casa Calma'],
@@ -222,10 +243,10 @@ function Confirmed({ orderId }) {
             className="font-sans font-light mb-3"
             style={{
               fontSize: '0.85rem', color: 'var(--taupe)',
-              lineHeight: 1.9, maxWidth: 400, margin: '0 auto 0.75rem',
+              lineHeight: 1.9, maxWidth: 420, margin: '0 auto 0.75rem',
             }}
           >
-            Recibimos tu solicitud y nos comunicaremos contigo por WhatsApp para coordinar el envío.
+            Nos comunicaremos por WhatsApp para coordinar el pago y el envío.
           </p>
 
           {orderId && (
@@ -264,7 +285,7 @@ export default function Checkout() {
   const { items, subtotal, totalQty, clear } = useCart()
   const { user, profile } = useAuth()
 
-  const [form, setForm]           = useState(INITIAL)
+  const [form, setForm]           = useState(() => ({ ...INITIAL, ...loadSavedForm(user?.id) }))
   const [file, setFile]           = useState(null)
   const [errors, setErrors]       = useState({})
   const [loading, setLoading]     = useState(false)
@@ -274,15 +295,15 @@ export default function Checkout() {
 
   const fileRef = useRef(null)
 
-  // Autocompletar con datos del usuario logueado
+  // Autocompletar con datos del usuario logueado (localStorage tiene prioridad)
   useEffect(() => {
     if (user || profile) {
       setForm((prev) => ({
         ...prev,
-        nombre:   profile?.nombre   || prev.nombre,
-        apellido: profile?.apellido || prev.apellido,
-        email:    user?.email       || prev.email,
-        telefono: profile?.telefono || prev.telefono,
+        nombre:   prev.nombre   || profile?.nombre   || '',
+        apellido: prev.apellido || profile?.apellido || '',
+        email:    prev.email    || user?.email       || '',
+        telefono: prev.telefono || profile?.telefono || '',
       }))
     }
   }, [user, profile])
@@ -313,7 +334,6 @@ export default function Checkout() {
     if (!form.calle.trim())     errs.calle       = 'Este campo es requerido'
     if (!form.ciudad.trim())    errs.ciudad      = 'Este campo es requerido'
     if (!form.departamento)     errs.departamento = 'Seleccioná un departamento'
-    if (!file)                  errs.file        = 'El comprobante de pago es requerido'
     return errs
   }
 
@@ -354,7 +374,8 @@ export default function Checkout() {
     try {
       const { orderId: newId } = await submitOrder({ form, items, subtotal, file, userId: user?.id || null })
 
-      // Todo OK: vaciamos el carrito y mostramos confirmación
+      // Todo OK: guardamos form, vaciamos el carrito y mostramos confirmación
+      saveForm(form, user?.id)
       clear()
       setOrderId(newId)
       setConfirmed(true)
@@ -596,7 +617,7 @@ export default function Checkout() {
                       ))}
                     </div>
                     <p style={{ fontFamily: 'DM Sans', fontSize: '0.65rem', color: 'var(--stone)', fontWeight: 300, lineHeight: 1.8, marginTop: '1rem', fontStyle: 'italic' }}>
-                      Realizá la transferencia por el monto exacto y luego subí el comprobante a continuación.
+                      Realizá la transferencia por el monto exacto. Podés subir el comprobante a continuación o enviarlo luego por WhatsApp.
                     </p>
                   </div>
                 </div>
@@ -605,9 +626,9 @@ export default function Checkout() {
 
                 {/* ── 4. Comprobante ── */}
                 <div>
-                  <SectionTitle>Comprobante de pago</SectionTitle>
+                  <SectionTitle>Comprobante de pago (opcional)</SectionTitle>
                   <p style={{ fontFamily: 'DM Sans', fontSize: '0.76rem', color: 'var(--taupe)', fontWeight: 300, lineHeight: 1.8, marginBottom: '1rem' }}>
-                    Subí una captura de pantalla o PDF que confirme la transferencia realizada.
+                    Podés subir el comprobante ahora o enviarlo luego por WhatsApp.
                   </p>
 
                   {/* Área de upload */}
