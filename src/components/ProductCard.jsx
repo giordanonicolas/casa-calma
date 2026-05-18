@@ -7,8 +7,9 @@ export default function ProductCard({ product, delay = 0 }) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
 
-  const outOfStock = stock === 0
-  const lowStock   = stock > 0 && stock <= 3
+  const outOfStock   = stock === 0
+  const lowStock     = stock > 0 && stock <= 3
+  const stockLabel   = stock === 1 ? 'Última unidad disponible' : `Quedan ${stock} unidades`
 
   const handleAdd = () => {
     if (outOfStock) return
@@ -64,14 +65,14 @@ export default function ProductCard({ product, delay = 0 }) {
           ${price.toLocaleString('es-UY')}
         </p>
 
-        {/* Aviso últimas unidades */}
+        {/* Aviso stock bajo */}
         {lowStock && (
           <p style={{
             fontFamily: 'DM Sans, system-ui, sans-serif',
             fontSize: '0.56rem', letterSpacing: '0.14em', textTransform: 'uppercase',
             color: 'var(--stone)', marginBottom: '0.5rem',
           }}>
-            Últimas unidades
+            {stockLabel}
           </p>
         )}
 

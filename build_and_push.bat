@@ -25,7 +25,7 @@ echo   Build exitoso.
 echo.
 echo [2/3] git add y commit...
 git add -A
-git commit -m "feat: agregar control basico de stock"
+git commit -m "fix: mejorar mensajes de stock"
 if errorlevel 1 (
     echo   Nada nuevo para commitear o error en git.
 )

@@ -213,7 +213,7 @@ export default function Carrito() {
                             fontSize: '0.52rem', letterSpacing: '0.1em',
                             color: 'var(--stone)', textAlign: 'center',
                           }}>
-                            Máx. disponible
+                            Máx. disponible: {item.stock}
                           </p>
                         )}
                       </div>
