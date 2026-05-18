@@ -31,10 +31,12 @@ export default function Coleccion() {
   const catInfo = categoria ? CATEGORY_MAP[categoria] : null
   const isValidCategory = !categoria || Boolean(catInfo)
 
-  // Filtrar por categoría desde el catálogo local
-  const filtered = catInfo
-    ? products.filter((p) => p.category === catInfo.productCategory)
-    : products
+  // Solo productos activos; filtrar por categoría si corresponde
+  const filtered = products.filter((p) => {
+    if (!p.active) return false
+    if (catInfo) return p.category === catInfo.productCategory
+    return true
+  })
 
   const pageTitle = catInfo ? catInfo.label : 'Colección'
   const pageDesc  = catInfo

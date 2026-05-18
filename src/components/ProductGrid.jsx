@@ -3,8 +3,8 @@ import { products } from '../data/products.js'
 import ProductCard from './ProductCard.jsx'
 
 export default function ProductGrid() {
-  // Primeros 4 productos del catálogo local
-  const featured = products.slice(0, 4)
+  // Solo productos activos y marcados como destacados
+  const featured = products.filter((p) => p.active && p.featured)
 
   return (
     <section id="coleccion" className="py-20 md:py-28 px-6" style={{ backgroundColor: 'var(--cream)' }}>

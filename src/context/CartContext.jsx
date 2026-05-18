@@ -28,7 +28,8 @@ function cartReducer(state, action) {
   switch (action.type) {
     case 'ADD': {
       const existing = state.find((i) => i.id === action.product.id)
-      // Bloquear si stock === 0 (seguridad extra)
+      // Bloquear si inactivo o sin stock
+      if (action.product.active === false) return state
       if (action.product.stock === 0) return state
       if (existing) {
         // No superar el stock disponible

@@ -328,6 +328,15 @@ export default function Checkout() {
       return
     }
 
+    // Validar productos inactivos en el carrito
+    const inactivos = items.filter((i) => i.active === false)
+    if (inactivos.length > 0) {
+      const nombres = inactivos.map((i) => i.name).join(', ')
+      setServerError(`Los siguientes productos ya no están disponibles: ${nombres}. Por favor retiralos del carrito.`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
     // Validar stock antes de confirmar
     const sinStock = items.filter((i) => i.stock !== undefined && i.qty > i.stock)
     if (sinStock.length > 0) {
