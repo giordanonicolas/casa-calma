@@ -20,10 +20,11 @@ function EmptyBagIcon() {
   )
 }
 
-function QtyButton({ onClick, children }) {
+function QtyButton({ onClick, children, disabled }) {
   return (
     <button
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       style={{
         width: 30,
         height: 30,
@@ -32,14 +33,15 @@ function QtyButton({ onClick, children }) {
         justifyContent: 'center',
         fontFamily: 'DM Sans, system-ui, sans-serif',
         fontSize: '1rem',
-        color: 'var(--taupe)',
+        color: disabled ? 'var(--linen-warm)' : 'var(--taupe)',
         backgroundColor: 'transparent',
         border: 'none',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'color 0.2s ease',
+        opacity: disabled ? 0.5 : 1,
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--charcoal)')}
-      onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--taupe)')}
+      onMouseEnter={(e) => { if (!disabled) e.currentTarget.style.color = 'var(--charcoal)' }}
+      onMouseLeave={(e) => { if (!disabled) e.currentTarget.style.color = 'var(--taupe)' }}
     >
       {children}
     </button>
@@ -179,27 +181,41 @@ export default function Carrito() {
                       </div>
 
                       {/* Cantidad */}
-                      <div
-                        className="col-span-3 flex items-center justify-center"
-                        style={{
-                          border: '1px solid var(--linen-mid)',
-                          width: 'fit-content',
-                          margin: '0 auto',
-                        }}
-                      >
-                        <QtyButton onClick={() => dec(item.id)}>−</QtyButton>
-                        <span
-                          className="font-sans"
+                      <div className="col-span-3 flex flex-col items-center gap-1">
+                        <div
                           style={{
-                            minWidth: 28,
-                            textAlign: 'center',
-                            fontSize: '0.8rem',
-                            color: 'var(--charcoal)',
+                            border: '1px solid var(--linen-mid)',
+                            width: 'fit-content',
+                            display: 'flex', alignItems: 'center',
                           }}
                         >
-                          {item.qty}
-                        </span>
-                        <QtyButton onClick={() => inc(item.id)}>+</QtyButton>
+                          <QtyButton onClick={() => dec(item.id)}>−</QtyButton>
+                          <span
+                            className="font-sans"
+                            style={{
+                              minWidth: 28,
+                              textAlign: 'center',
+                              fontSize: '0.8rem',
+                              color: 'var(--charcoal)',
+                            }}
+                          >
+                            {item.qty}
+                          </span>
+                          <QtyButton
+                            onClick={() => inc(item.id)}
+                            disabled={item.stock !== undefined && item.qty >= item.stock}
+                          >+</QtyButton>
+                        </div>
+                        {/* Aviso límite de stock */}
+                        {item.stock !== undefined && item.qty >= item.stock && (
+                          <p style={{
+                            fontFamily: 'DM Sans, system-ui, sans-serif',
+                            fontSize: '0.52rem', letterSpacing: '0.1em',
+                            color: 'var(--stone)', textAlign: 'center',
+                          }}>
+                            Máx. disponible
+                          </p>
+                        )}
                       </div>
 
                       {/* Subtotal item */}

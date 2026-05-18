@@ -28,7 +28,11 @@ function cartReducer(state, action) {
   switch (action.type) {
     case 'ADD': {
       const existing = state.find((i) => i.id === action.product.id)
+      // Bloquear si stock === 0 (seguridad extra)
+      if (action.product.stock === 0) return state
       if (existing) {
+        // No superar el stock disponible
+        if (action.product.stock !== undefined && existing.qty >= action.product.stock) return state
         return state.map((i) =>
           i.id === action.product.id ? { ...i, qty: i.qty + 1 } : i
         )
@@ -38,9 +42,12 @@ function cartReducer(state, action) {
     case 'REMOVE':
       return state.filter((i) => i.id !== action.id)
     case 'INC':
-      return state.map((i) =>
-        i.id === action.id ? { ...i, qty: i.qty + 1 } : i
-      )
+      return state.map((i) => {
+        if (i.id !== action.id) return i
+        // No superar el stock disponible
+        if (i.stock !== undefined && i.qty >= i.stock) return i
+        return { ...i, qty: i.qty + 1 }
+      })
     case 'DEC':
       return state.map((i) =>
         i.id === action.id ? { ...i, qty: Math.max(1, i.qty - 1) } : i

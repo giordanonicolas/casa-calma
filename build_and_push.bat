@@ -25,7 +25,7 @@ echo   Build exitoso.
 echo.
 echo [2/3] git add y commit...
 git add -A
-git commit -m "feat: stock, admin panel, place_order RPC, update_order_status con devolucion de stock"
+git commit -m "feat: agregar control basico de stock"
 if errorlevel 1 (
     echo   Nada nuevo para commitear o error en git.
 )

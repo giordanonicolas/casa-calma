@@ -3,26 +3,49 @@ import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext.jsx'
 
 export default function ProductCard({ product, delay = 0 }) {
-  const { category, name, description, price, image } = product
+  const { category, name, description, price, image, stock } = product
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
 
+  const outOfStock = stock === 0
+  const lowStock   = stock > 0 && stock <= 3
+
   const handleAdd = () => {
+    if (outOfStock) return
     addItem(product)
     setAdded(true)
     setTimeout(() => setAdded(false), 2500)
   }
 
   return (
-    <article className={`product-card reveal reveal-delay-${delay}`}>
+    <article className={`product-card reveal reveal-delay-${delay}`} style={{ position: 'relative' }}>
       {/* Imagen */}
-      <div className="product-img-container aspect-[3/4] mb-4">
+      <div className="product-img-container aspect-[3/4] mb-4" style={{ position: 'relative' }}>
         <img
           src={image}
           alt={name}
           className="w-full h-full object-cover"
           onError={(e) => { e.target.parentElement.style.backgroundColor = 'var(--linen-pale)' }}
         />
+        {/* Badge sin stock sobre la imagen */}
+        {outOfStock && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundColor: 'rgba(255,252,245,0.6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{
+              fontFamily: 'DM Sans, system-ui, sans-serif',
+              fontSize: '0.55rem', letterSpacing: '0.22em', textTransform: 'uppercase',
+              color: 'var(--taupe)',
+              padding: '0.35rem 0.9rem',
+              border: '1px solid var(--linen-mid)',
+              backgroundColor: 'var(--ivory)',
+            }}>
+              Sin stock
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Info */}
@@ -41,9 +64,21 @@ export default function ProductCard({ product, delay = 0 }) {
           ${price.toLocaleString('es-UY')}
         </p>
 
+        {/* Aviso últimas unidades */}
+        {lowStock && (
+          <p style={{
+            fontFamily: 'DM Sans, system-ui, sans-serif',
+            fontSize: '0.56rem', letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: 'var(--stone)', marginBottom: '0.5rem',
+          }}>
+            Últimas unidades
+          </p>
+        )}
+
         {/* Botón agregar */}
         <button
           onClick={handleAdd}
+          disabled={outOfStock}
           style={{
             width: '100%',
             padding: '0.55rem 0',
@@ -52,14 +87,14 @@ export default function ProductCard({ product, delay = 0 }) {
             fontWeight: 400,
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
-            backgroundColor: added ? 'var(--leather)' : 'transparent',
-            color: added ? 'var(--ivory)' : 'var(--taupe)',
-            border: `1px solid ${added ? 'var(--leather)' : 'var(--linen-mid)'}`,
+            backgroundColor: outOfStock ? 'transparent' : added ? 'var(--leather)' : 'transparent',
+            color: outOfStock ? 'var(--linen-warm)' : added ? 'var(--ivory)' : 'var(--taupe)',
+            border: `1px solid ${outOfStock ? 'var(--linen-pale)' : added ? 'var(--leather)' : 'var(--linen-mid)'}`,
             transition: 'background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease',
-            cursor: 'pointer',
+            cursor: outOfStock ? 'not-allowed' : 'pointer',
           }}
         >
-          {added ? '✓ Agregado' : 'Agregar al carrito'}
+          {outOfStock ? 'Sin stock' : added ? '✓ Agregado' : 'Agregar al carrito'}
         </button>
 
         {/* "Ver carrito" aparece cuando el producto fue agregado */}

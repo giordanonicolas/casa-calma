@@ -328,6 +328,15 @@ export default function Checkout() {
       return
     }
 
+    // Validar stock antes de confirmar
+    const sinStock = items.filter((i) => i.stock !== undefined && i.qty > i.stock)
+    if (sinStock.length > 0) {
+      const nombres = sinStock.map((i) => i.name).join(', ')
+      setServerError(`Stock insuficiente para: ${nombres}. Por favor revisá tu carrito.`)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
     setLoading(true)
     setServerError(null)
 

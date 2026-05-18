@@ -6,6 +6,7 @@ export const products = [
     name: 'Almohadón Lino Calma',
     description: 'Lino natural · 50×50 cm',
     price: 3200,
+    stock: 5,
     image: '/images/almoadon-lino-calma.png',
   },
   {
@@ -15,6 +16,7 @@ export const products = [
     name: 'Manta Nido',
     description: 'Algodón tejido · 130×170 cm',
     price: 5800,
+    stock: 3,
     image: '/images/manta-nido.png',
   },
   {
@@ -24,6 +26,7 @@ export const products = [
     name: 'Almohadón Arena',
     description: 'Lino lavado · 45×45 cm',
     price: 2900,
+    stock: 0,
     image: '/images/almoadon-arena.png',
   },
   {
@@ -33,6 +36,7 @@ export const products = [
     name: 'Camino de Mesa Lino',
     description: 'Lino crudo · 40×180 cm',
     price: 2100,
+    stock: 8,
     image: '/images/camino-mesa-lino.png',
   },
   {
@@ -42,6 +46,7 @@ export const products = [
     name: 'Cama Donut Sherpa',
     description: 'Sherpa bouclé · Ø 60 cm · Beige',
     price: 4200,
+    stock: 2,
     image: '/images/cucha-donut-sherpa.png',
   },
   {
@@ -51,6 +56,7 @@ export const products = [
     name: 'Cueva Sherpa para Gato',
     description: 'Sherpa bouclé · Ø 45 cm · Beige',
     price: 3800,
+    stock: 1,
     image: '/images/cucha-cueva-gato.png',
   },
   {
@@ -60,6 +66,7 @@ export const products = [
     name: 'Cama Rectangular Lino',
     description: 'Lino natural · 80×60 cm · Arena',
     price: 5500,
+    stock: 4,
     image: '/images/cucha-rectangular-lino.png',
   },
 ]
