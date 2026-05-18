@@ -265,7 +265,21 @@ export default function AdminProductos() {
   const [saving, setSaving]           = useState({})   // { [id]: bool }
   const [messages, setMessages]       = useState({})   // { [id]: { type, text } }
 
+  /* Timeout de seguridad: si auth sigue loading después de 3 s, salimos del spinner */
+  const [authTimedOut, setAuthTimedOut] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setAuthTimedOut(true), 3000)
+    return () => clearTimeout(t)
+  }, [])
+
   const isAdmin = profile?.role === 'admin'
+
+  console.log('[admin-productos]', {
+    authLoading, authTimedOut,
+    user: user?.email ?? null,
+    profile: profile?.role ?? null,
+    isAdmin,
+  })
 
   /* Cargar todos los productos (admin ve activos e inactivos) */
   useEffect(() => {
@@ -339,7 +353,9 @@ export default function AdminProductos() {
   }
 
   /* ── Guards de acceso ── */
-  if (authLoading || (user && profile === null)) {
+
+  // Auth todavía cargando Y no venció el timeout → spinner
+  if (authLoading && !authTimedOut) {
     return (
       <>
         <Header />
@@ -351,6 +367,19 @@ export default function AdminProductos() {
     )
   }
 
+  // Auth tardó demasiado → no pudimos verificar sesión
+  if (authLoading && authTimedOut) {
+    return (
+      <AccessScreen
+        title="No pudimos verificar la sesión"
+        subtitle="La verificación tardó demasiado. Recargá la página o volvé a iniciar sesión."
+        cta="Iniciar sesión"
+        to="/cuenta"
+      />
+    )
+  }
+
+  // Auth resolvió, no hay usuario
   if (!user) {
     return (
       <AccessScreen
@@ -362,6 +391,20 @@ export default function AdminProductos() {
     )
   }
 
+  // Hay usuario pero profile todavía es null (loadProfile en background)
+  // Esperamos máximo 3 s vía authTimedOut; si venció y sigue null, avisamos
+  if (user && profile === null) {
+    return (
+      <AccessScreen
+        title="Verificando permisos"
+        subtitle="Tu sesión está activa, pero no pudimos verificar los permisos de administrador. Recargá la página para intentar de nuevo."
+        cta="Recargar"
+        to="/admin-productos"
+      />
+    )
+  }
+
+  // Hay usuario y profile, pero no es admin
   if (!isAdmin) {
     return (
       <AccessScreen

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import Header from '../components/Header.jsx'
@@ -472,6 +472,19 @@ export default function Cuenta() {
   const navigate = useNavigate()
   const [tab, setTab] = useState('login')
 
+  /* Timeout de seguridad: si loading sigue true después de 3 s,
+     renderizamos igual para que nunca quede en spinner infinito. */
+  const [timedOut, setTimedOut] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setTimedOut(true), 3000)
+    return () => clearTimeout(t)
+  }, [])
+
+  console.log('[cuenta]', { loading, timedOut, user: user?.email ?? null, profile: profile?.role ?? null })
+
+  /* Mostrar spinner solo mientras loading=true Y no llegó el timeout */
+  const showSpinner = loading && !timedOut
+
   const tabSt = (active) => ({
     flex: 1,
     padding: '0.75rem 0',
@@ -505,7 +518,7 @@ export default function Cuenta() {
           </div>
 
           {/* Contenido según estado de auth */}
-          {loading ? (
+          {showSpinner ? (
             <Spinner />
           ) : user ? (
             /* ── Usuario logueado ── */

@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase.js'
 
 const AuthContext = createContext(null)
 
+/* Tiempo máximo que esperamos a getSession antes de desistir */
+const GET_SESSION_TIMEOUT_MS = 3000
+
 /* ══════════════════════════════════════════════
    PROVIDER
 ══════════════════════════════════════════════ */
@@ -11,8 +14,9 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  /* Carga el perfil extendido (nombre, apellido, teléfono).
-     PGRST116 = sin filas — normal para usuarios nuevos, no es un error real. */
+  /* Carga el perfil extendido en background.
+     PGRST116 = sin filas — normal para usuarios nuevos.
+     Nunca bloquea el loading principal. */
   const loadProfile = async (userId) => {
     try {
       const { data, error } = await supabase
@@ -23,6 +27,7 @@ export function AuthProvider({ children }) {
       if (error && error.code !== 'PGRST116') {
         console.error('[auth] error al cargar perfil:', error.message)
       }
+      console.log('[auth] profile loaded', data?.role ?? 'sin role')
       setProfile(data ?? null)
     } catch (err) {
       console.error('[auth] excepción al cargar perfil:', err?.message ?? err)
@@ -33,28 +38,46 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true
 
-    /* Sesión existente al montar.
-       setLoading(false) se ejecuta en finally — SIEMPRE, sin importar qué pase.
-       loadProfile NO se awaita: carga en background para no bloquear la UI.
-       /cuenta renderiza con user (puede haber profile=null si aún no cargó). */
+    /* getSession con timeout de seguridad.
+       Si tarda más de GET_SESSION_TIMEOUT_MS (3 s), rechazamos y
+       llamamos setLoading(false) de todos modos para no bloquear la UI.
+       Causa más común del cuelgue: token expirado + Supabase tarda en
+       responder al refresh request → la promesa queda pendiente. */
     ;(async () => {
+      console.log('[auth] getSession start')
       try {
-        const { data, error } = await supabase.auth.getSession()
+        const result = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('getSession timeout')), GET_SESSION_TIMEOUT_MS)
+          ),
+        ])
+
         if (!mounted) return
+
+        const { data, error } = result
         if (error) throw error
+
         const u = data?.session?.user ?? null
         setUser(u)
-        if (u) loadProfile(u.id) // fire-and-forget: no bloquea setLoading
+        console.log('[auth] getSession done', u ? u.email : 'sin sesión')
+
+        // loadProfile corre en background, no bloquea setLoading
+        if (u) loadProfile(u.id)
+
       } catch (err) {
-        console.error('[auth] error al inicializar sesión:', err?.message ?? err)
+        console.warn('[auth] getSession error/timeout:', err?.message ?? err)
         if (mounted) setUser(null)
       } finally {
-        if (mounted) setLoading(false)
+        if (mounted) {
+          console.log('[auth] loading false')
+          setLoading(false)
+        }
       }
     })()
 
     /* Escuchar cambios de sesión (login / logout / token refresh).
-       onAuthStateChange también dispara INITIAL_SESSION al montar;
+       onAuthStateChange dispara INITIAL_SESSION al montar;
        lo ignoramos porque getSession ya lo maneja arriba. */
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
@@ -62,7 +85,7 @@ export function AuthProvider({ children }) {
         const u = session?.user ?? null
         setUser(u)
         if (u) {
-          await loadProfile(u.id)
+          loadProfile(u.id) // fire-and-forget
         } else {
           setProfile(null)
         }
@@ -83,18 +106,11 @@ export function AuthProvider({ children }) {
     return data
   }
 
-  /**
-   * Registra un usuario con email/contraseña y guarda nombre, apellido y teléfono
-   * en raw_user_meta_data. El trigger handle_new_user() en Supabase toma esos datos
-   * y los inserta en la tabla profiles automáticamente.
-   */
   const register = async ({ email, password, nombre, apellido, telefono }) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { nombre, apellido, telefono },
-      },
+      options: { data: { nombre, apellido, telefono } },
     })
     if (error) throw error
     return data
@@ -104,7 +120,6 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
-  /** Actualiza nombre, apellido y/o teléfono en la tabla profiles */
   const updateProfile = async (updates) => {
     if (!user) throw new Error('No hay sesión activa')
     const { data, error } = await supabase
