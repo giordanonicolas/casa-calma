@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { products, categories } from '../data/products.js'
+import { categories } from '../data/products.js'
+import { fetchProducts } from '../lib/products.js'
 import ProductCard from '../components/ProductCard.jsx'
 import Header from '../components/Header.jsx'
 import Footer from '../components/Footer.jsx'
@@ -22,17 +23,40 @@ const CHIPS = [
   ...categories.map((c) => ({ label: c.name, slug: c.slug })),
 ]
 
+/* Placeholder sutil mientras carga */
+function SkeletonCard() {
+  return (
+    <div style={{
+      aspectRatio: '3 / 4',
+      backgroundColor: 'var(--linen-pale)',
+      animation: 'skeletonPulse 1.6s ease-in-out infinite',
+    }} />
+  )
+}
+
 /* ══════════════════════════════════════════════
    COMPONENTE
 ══════════════════════════════════════════════ */
 export default function Coleccion() {
   const { categoria } = useParams()
 
-  const catInfo = categoria ? CATEGORY_MAP[categoria] : null
+  const [allProducts, setAllProducts] = useState([])
+  const [loading, setLoading]         = useState(true)
+
+  const catInfo         = categoria ? CATEGORY_MAP[categoria] : null
   const isValidCategory = !categoria || Boolean(catInfo)
 
-  // Solo productos activos; filtrar por categoría si corresponde
-  const filtered = products.filter((p) => {
+  /* Cargar productos desde Supabase (con fallback local) */
+  useEffect(() => {
+    setLoading(true)
+    fetchProducts().then((data) => {
+      setAllProducts(data)
+      setLoading(false)
+    })
+  }, []) // solo al montar — el catálogo no cambia al filtrar por categoría
+
+  /* Solo productos activos; filtrar por categoría si corresponde */
+  const filtered = allProducts.filter((p) => {
     if (!p.active) return false
     if (catInfo) return p.category === catInfo.productCategory
     return true
@@ -43,8 +67,9 @@ export default function Coleccion() {
     ? `Todos nuestros ${catInfo.label.toLowerCase()} — piezas cuidadas, materiales naturales.`
     : 'Textiles y decoración para el hogar. Cada pieza, hecha con intención.'
 
-  /* Reveal on scroll — al cambiar categoría */
+  /* Reveal on scroll — re-ejecutar cuando cambia categoría O cuando termina de cargar */
   useEffect(() => {
+    if (loading) return
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
@@ -58,7 +83,7 @@ export default function Coleccion() {
     )
     document.querySelectorAll('.reveal').forEach((el) => observer.observe(el))
     return () => observer.disconnect()
-  }, [categoria])
+  }, [categoria, loading])
 
   /* ── Categoría inválida ── */
   if (!isValidCategory) {
@@ -85,6 +110,13 @@ export default function Coleccion() {
 
   return (
     <>
+      <style>{`
+        @keyframes skeletonPulse {
+          0%, 100% { opacity: 1; }
+          50%       { opacity: 0.5; }
+        }
+      `}</style>
+
       <Header />
       <main style={{ backgroundColor: 'var(--ivory)', minHeight: '100vh' }}>
 
@@ -170,7 +202,12 @@ export default function Coleccion() {
         <div className="px-6 py-14 md:py-20">
           <div className="max-w-7xl mx-auto">
 
-            {filtered.length === 0 ? (
+            {loading ? (
+              /* Skeleton sutil mientras carga desde Supabase */
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => <SkeletonCard key={i} />)}
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="text-center py-20 reveal">
                 <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth="1"
                   strokeLinecap="round" strokeLinejoin="round"
