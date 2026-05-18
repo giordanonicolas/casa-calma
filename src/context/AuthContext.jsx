@@ -34,16 +34,17 @@ export function AuthProvider({ children }) {
     let mounted = true
 
     /* Sesión existente al montar.
-       try/finally garantiza que setLoading(false) SIEMPRE se ejecuta,
-       incluso si getSession() o loadProfile() fallan inesperadamente. */
+       setLoading(false) se ejecuta en finally — SIEMPRE, sin importar qué pase.
+       loadProfile NO se awaita: carga en background para no bloquear la UI.
+       /cuenta renderiza con user (puede haber profile=null si aún no cargó). */
     ;(async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession()
+        const { data, error } = await supabase.auth.getSession()
         if (!mounted) return
         if (error) throw error
-        const u = session?.user ?? null
+        const u = data?.session?.user ?? null
         setUser(u)
-        if (u) await loadProfile(u.id)
+        if (u) loadProfile(u.id) // fire-and-forget: no bloquea setLoading
       } catch (err) {
         console.error('[auth] error al inicializar sesión:', err?.message ?? err)
         if (mounted) setUser(null)
